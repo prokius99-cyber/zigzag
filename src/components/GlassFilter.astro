@@ -1,0 +1,12 @@
+---
+/** SVG-фильтр преломления для LiquidGlass. Ставится один раз на странице (в начале <body>). */
+interface Props { scale?: number }
+const { scale = 26 } = Astro.props;
+---
+<svg aria-hidden="true" focusable="false" width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden">
+  <filter id="lg-refract" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.008 0.012" numOctaves="2" seed="7" result="noise" />
+    <feGaussianBlur in="noise" stdDeviation="2" result="soft" />
+    <feDisplacementMap in="SourceGraphic" in2="soft" scale={scale} xChannelSelector="R" yChannelSelector="G" />
+  </filter>
+</svg>

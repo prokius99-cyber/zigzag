@@ -1,0 +1,105 @@
+---
+/**
+ * Капсула блюда (DESIGN.md §4): фото в рамке, плашка «название + цена» на scrim, граммовка, кнопка «i».
+ * Данные для «Карточки предмета» (С1) лежат в data-атрибутах; саму карточку показывает ItemCard.astro.
+ */
+import { Picture } from 'astro:assets';
+import { categories, photos, type Dish } from '../data/menu';
+
+interface Props {
+  dish: Dish;
+  /** Подсказка браузеру о ширине капсулы. */
+  sizes?: string;
+  widths?: number[];
+  eager?: boolean;
+  /** Отношение сторон кадра: '4 / 3' по умолчанию. */
+  ratio?: string;
+  class?: string;
+  /** Подпись под плашкой (граммовка). */
+  showPortion?: boolean;
+}
+const {
+  dish,
+  sizes = '(min-width: 1280px) 240px, (min-width: 768px) 30vw, 60vw',
+  widths = [320, 480, 720],
+  eager = false,
+  ratio = '4 / 3',
+  class: cls = '',
+  showPortion = true,
+} = Astro.props;
+const cat = categories.find((c) => c.id === dish.category)?.label ?? '';
+const rub = new Intl.NumberFormat('ru-RU').format(dish.price) + ' ₽';
+const img = photos[dish.photo];
+---
+<article
+  class:list={['capsule', cls]}
+  data-dish
+  data-name={dish.name}
+  data-cat={cat}
+  data-portion={dish.portion ?? ''}
+  data-comp={dish.composition ?? ''}
+  data-price={rub}
+  style={`--ratio:${ratio}`}
+>
+  <div class="cap-box">
+    <div class="cap-media">
+    {img && (
+      <Picture
+        src={img}
+        alt={`${dish.name} — блюдо таверны ЗАГ-ЗАГ`}
+        widths={widths}
+        sizes={sizes}
+        formats={['avif', 'webp']}
+        loading={eager ? 'eager' : 'lazy'}
+        fetchpriority={eager ? 'high' : 'auto'}
+      />
+    )}
+    </div>
+    <p class="cap-plate">
+      <span class="cap-name">{dish.name}</span>
+      <span class="price">{rub}</span>
+    </p>
+    <button class="cap-i" type="button" data-dish-i aria-label={`Карточка предмета: ${dish.name}`} aria-haspopup="dialog" aria-controls="item-card">
+      <span aria-hidden="true">i</span>
+    </button>
+  </div>
+  {showPortion && dish.portion && dish.portion !== '1 шт.' && <p class="cap-portion num">{dish.portion}</p>}
+</article>
+
+<style>
+  .capsule { margin: 0; min-width: 0; container-type: inline-size; }
+  /* Кадр и плашка — в одной ячейке сетки (плашка поверх фото); в узкой капсуле плашка уходит во вторую строку. */
+  .cap-box {
+    position: relative; display: grid; overflow: hidden;
+    border: 1px solid var(--c-border); border-radius: var(--r-md); background: var(--c-sunken);
+  }
+  .cap-media { grid-area: 1 / 1; position: relative; aspect-ratio: var(--ratio); overflow: hidden; }
+  .cap-media :global(picture) { position: absolute; inset: 0; }
+  .cap-media :global(img) {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+    transition: transform var(--d-micro) var(--e-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .capsule:hover .cap-media :global(img) { transform: scale(1.04); }
+  }
+  .cap-plate {
+    grid-area: 1 / 1; align-self: end; position: relative; margin: 0;
+    display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-3);
+    padding: var(--s-2) var(--s-3); background: var(--c-scrim);
+  }
+  .cap-name { font-weight: 500; font-size: var(--t-small); line-height: 1.25; min-width: 0; overflow-wrap: normal; hyphens: auto; }
+  @container (max-width: 230px) {
+    .cap-plate { grid-area: 2 / 1; flex-direction: column; align-items: flex-start; gap: var(--s-1); background: var(--c-sunken); }
+  }
+  .cap-portion { margin: var(--s-1) 0 0; color: var(--c-muted); font-size: var(--t-small); }
+  .cap-i {
+    position: absolute; top: 0; right: 0; z-index: 1; width: 44px; height: 44px; padding: 0; border: 0; cursor: pointer;
+    display: grid; place-items: center; background: transparent; color: var(--c-text);
+  }
+  .cap-i span {
+    width: 28px; height: 28px; border-radius: var(--r-pill); display: grid; place-items: center;
+    background: var(--c-scrim); border: 1px solid color-mix(in oklab, var(--c-secondary) 55%, transparent);
+    font: 700 1rem/1 var(--f-display); color: var(--c-secondary);
+  }
+  .cap-i:focus-visible { outline-offset: -3px; }
+</style>

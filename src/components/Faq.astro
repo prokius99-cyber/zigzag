@@ -1,0 +1,31 @@
+---
+/**
+ * Вопросы и ответы на <details>: работает без JS, доступно с клавиатуры, отдаёт FAQPage в JSON-LD.
+ * Вопросы — реальные: из отзывов, переписки, брифа. Ответы — только подтверждённые факты.
+ *
+ * <Faq items={[{ q: 'Можно оплатить картой?', a: 'Да, картой и наличными.' }]} />
+ */
+interface Item { q: string; a: string }
+interface Props { items: Item[] }
+const { items } = Astro.props;
+const ld = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: items.map((i) => ({ '@type': 'Question', name: i.q, acceptedAnswer: { '@type': 'Answer', text: i.a } })) };
+---
+<div class="faq">
+  {items.map((i) => (
+    <details>
+      <summary>{i.q}</summary>
+      <p>{i.a}</p>
+    </details>
+  ))}
+</div>
+<script type="application/ld+json" set:html={JSON.stringify(ld)} />
+
+<style>
+  .faq { display: grid; gap: var(--s-2); max-width: 48rem; }
+  details { border-bottom: 1px solid var(--c-border); }
+  summary { min-height: var(--tap); display: flex; align-items: center; justify-content: space-between; gap: var(--s-4); padding: var(--s-3) 0; cursor: pointer; font-weight: 600; list-style: none; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: '+'; font-size: 1.4rem; line-height: 1; color: var(--c-muted); transition: transform var(--d-state) var(--e-out); }
+  details[open] summary::after { transform: rotate(45deg); }
+  details p { margin: 0 0 var(--s-4); color: var(--c-muted); max-width: 70ch; }
+</style>

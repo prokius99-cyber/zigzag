@@ -1,0 +1,179 @@
+---
+/** «О таверне»: асимметричная мозаика деталей зала + список характеристик <dl>. Факты — analysis.md. */
+import Section from '../components/Section.astro';
+import { Picture, getImage } from 'astro:assets';
+import { photos } from '../data/menu';
+import { business } from '../data/site';
+
+const tiles = [
+  { photo: 'hall-orc', area: 'orc', alt: 'Зелёный орк-скульптура за столом таверны показывает «козу»' },
+  { photo: 'hall-table', area: 'table', alt: 'Стол орков: деревянные кружки с пеной и окорока на доске' },
+  { photo: 'hall-lamp', area: 'lamp', alt: 'Кованый фонарь на тёмной стене зала' },
+  { photo: 'hall-guard', area: 'guard', alt: 'Орк в железном доспехе и шлеме за столом' },
+  { photo: 'hall-drinker', area: 'drinker', alt: 'Орк у кирпичной стены пьёт из кружки' },
+  { photo: 'hall-tables', area: 'tables', alt: 'Грубый деревянный стол и стулья в глубине зала, у окна — орк-скульптура' },
+];
+const items = await Promise.all(
+  tiles.map(async (t) => {
+    const src = photos[t.photo];
+    const full = await getImage({ src, format: 'webp', width: src.width });
+    return { ...t, src, full: full.src, w: src.width };
+  }),
+);
+
+const features = [
+  'Крафтовое пиво',
+  'Аренда кальяна',
+  'Настольные игры',
+  'Ретро-игровые автоматы',
+  'Мерч',
+  'Можно с животными',
+  'Wi-Fi',
+];
+const schedule = business.eventsSchedule.charAt(0).toUpperCase() + business.eventsSchedule.slice(1);
+---
+<Section id="tavern" title="О таверне">
+  <div class="tv">
+    <div class="tv-mosaic">
+      {items.map((t, i) => (
+        <button
+          type="button"
+          class={`frame tv-tile tv-${t.area}`}
+          data-tv-open={i}
+          data-full={t.full}
+          data-alt={t.alt}
+          data-w={t.w}
+          aria-label={`Открыть крупнее: ${t.alt}`}
+        >
+          <Picture src={t.src} alt={t.alt} widths={[...new Set([Math.min(480, t.w), Math.min(800, t.w)])]} sizes="(min-width: 1024px) 380px, 50vw" formats={["avif", "webp"]} />
+        </button>
+      ))}
+    </div>
+
+    <dl class="tv-list">
+      <div class="tv-row">
+        <dt class="shelf-label">Жанр</dt>
+        <dd>Гик-таверна, бар, кальян-бар</dd>
+      </div>
+      <div class="tv-row">
+        <dt class="shelf-label">Особенности</dt>
+        <dd>
+          <ul class="tv-chips">
+            {features.map((f) => <li class="tag">{f}</li>)}
+          </ul>
+        </dd>
+      </div>
+      <div class="tv-row">
+        <dt class="shelf-label">Мероприятия</dt>
+        <dd>
+          <span class="num">{schedule}</span>: MTG, D&amp;D, квесты, косплей-конкурсы, покрас миниатюр.
+          <a class="link tv-link" href="#events">Игровые вечера</a>
+        </dd>
+      </div>
+      <div class="tv-row">
+        <dt class="shelf-label">Девиз</dt>
+        <dd>
+          <q class="tv-motto">«Hard oRck CAFE» в&nbsp;Москве, для Орков / Бойзов / Урук-Хаев и&nbsp;их противников!</q>
+        </dd>
+      </div>
+    </dl>
+  </div>
+
+  <dialog class="tv-box" aria-label="Деталь интерьера" data-tv-box>
+    <figure class="tv-fig">
+      <img src={items[0].full} alt="" width={items[0].w} height={items[0].src.height} loading="lazy" decoding="async" data-tv-img />
+      <figcaption class="plaque" data-tv-cap></figcaption>
+    </figure>
+    <button type="button" class="tv-btn tv-prev" data-tv-prev aria-label="Предыдущее фото">‹</button>
+    <button type="button" class="tv-btn tv-next" data-tv-next aria-label="Следующее фото">›</button>
+    <button type="button" class="tv-btn tv-close" data-tv-close aria-label="Закрыть">×</button>
+  </dialog>
+</Section>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-section="tavern"]');
+  const box = root?.querySelector<HTMLDialogElement>('[data-tv-box]');
+  if (root && box) {
+    const tiles = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-tv-open]'));
+    const img = box.querySelector<HTMLImageElement>('[data-tv-img]')!;
+    const cap = box.querySelector<HTMLElement>('[data-tv-cap]')!;
+    let cur = 0;
+    let opener: HTMLElement | null = null;
+    const show = (i: number) => {
+      cur = (i + tiles.length) % tiles.length;
+      const t = tiles[cur];
+      img.src = t.dataset.full || '';
+      img.alt = t.dataset.alt || '';
+      img.style.setProperty('--tv-w', `${Math.round(Number(t.dataset.w) * 1.3)}px`);
+      cap.textContent = t.dataset.alt || '';
+    };
+    tiles.forEach((t, i) =>
+      t.addEventListener('click', () => {
+        opener = t;
+        show(i);
+        box.showModal();
+      }),
+    );
+    box.querySelector('[data-tv-prev]')!.addEventListener('click', () => show(cur - 1));
+    box.querySelector('[data-tv-next]')!.addEventListener('click', () => show(cur + 1));
+    box.querySelector('[data-tv-close]')!.addEventListener('click', () => box.close());
+    box.addEventListener('click', (e) => { if (e.target === box) box.close(); });
+    box.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') show(cur - 1);
+      if (e.key === 'ArrowRight') show(cur + 1);
+    });
+    box.addEventListener('close', () => opener?.focus());
+  }
+</script>
+
+<style>
+  .tv { display: grid; gap: var(--s-8); }
+  @media (min-width: 1024px) {
+    .tv { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: var(--s-12); align-items: start; }
+  }
+
+  .tv-mosaic {
+    display: grid; gap: var(--s-3);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-auto-rows: 4.25rem;
+    grid-template-areas:
+      "orc orc table table"
+      "orc orc table table"
+      "lamp guard drinker tables"
+      "lamp guard drinker tables";
+  }
+  @media (min-width: 640px) { .tv-mosaic { grid-auto-rows: 7.5rem; gap: var(--s-4); } }
+  .tv-tile {
+    position: relative; display: block; padding: 0; cursor: pointer; min-height: var(--tap);
+    transition: border-color var(--d-micro) var(--e-out);
+  }
+  .tv-tile:hover { border-color: var(--c-accent); }
+  .tv-tile :global(picture), .tv-tile :global(img) { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .tv-orc { grid-area: orc; }
+  .tv-table { grid-area: table; }
+  .tv-lamp { grid-area: lamp; }
+  .tv-guard { grid-area: guard; }
+  .tv-drinker { grid-area: drinker; }
+  .tv-tables { grid-area: tables; }
+
+  .tv-list { margin: 0; display: grid; border-top: 1px solid var(--c-border); }
+  .tv-row { display: grid; gap: var(--s-2); padding: var(--s-4) 0; border-bottom: 1px solid var(--c-border); }
+  .tv-row dd { margin: 0; font-size: var(--t-body); line-height: var(--t-body-lh); }
+  .tv-chips { display: flex; flex-wrap: wrap; gap: var(--s-2); margin: 0; padding: 0; list-style: none; }
+  .tv-motto { font: 700 var(--t-h3)/1.35 var(--f-display); quotes: none; color: var(--c-text); }
+  .tv-link { display: flex; align-items: center; width: fit-content; min-height: var(--tap); }
+
+  .tv-box { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; padding: 0; border: 0; background: var(--c-scrim); color: var(--c-text); }
+  .tv-box[open] { display: grid; place-items: center; }
+  .tv-box::backdrop { background: var(--c-scrim); }
+  .tv-fig { margin: 0; display: grid; gap: var(--s-3); justify-items: center; padding: var(--s-4); }
+  .tv-fig img { width: auto; max-width: min(100%, var(--tv-w, 100%)); max-height: 78dvh; border-radius: var(--r-lg); border: 1px solid var(--c-border); }
+  .tv-btn {
+    position: absolute; width: var(--tap); height: var(--tap); border-radius: var(--r-pill); border: 1px solid var(--c-border);
+    background: var(--c-sunken); color: var(--c-text); font-size: 1.75rem; line-height: 1; cursor: pointer;
+  }
+  .tv-btn:hover { border-color: var(--c-accent); }
+  .tv-prev { left: var(--s-3); top: 50%; translate: 0 -50%; }
+  .tv-next { right: var(--s-3); top: 50%; translate: 0 -50%; }
+  .tv-close { right: var(--s-3); top: var(--s-3); }
+</style>

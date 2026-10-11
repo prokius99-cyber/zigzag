@@ -1,0 +1,50 @@
+/*
+ * Токены дизайн-системы ЗАГ-ЗАГ. Значения — из DESIGN.md (разделы 2, 3, 5, 6, С2). Расходятся — прав DESIGN.md.
+ * В компонентах — только var(--…) или классы Tailwind, связанные с этими токенами в global.css.
+ * Литералы цветов, кеглей и отступов вне этого файла запрещены.
+ */
+:root {
+  /* цвет — роли · схема dark «морёный дуб» */
+  --c-bg: #261f13;          /* поле страницы: морёный дуб, H 81° */
+  --c-surface: #33291a;     /* панель (правая панель hero, шапка, «Пир для клана») */
+  --c-sunken: #140f09;      /* утопленный слой: карточка предмета, чипы, поля, зал галереи */
+  --c-text: #f3ebd9;        /* пергамент · 13.7 к фону */
+  --c-muted: #bdb196;       /* 7.7 к фону · 6.7 к панели */
+  --c-border: #54472f;
+  --c-accent: #918843;      /* brand · logo · H 102° — кнопки и активные чипы */
+  --c-on-accent: #120f08;   /* 5.3 на акценте */
+  --c-accent-text: #cfc063; /* ссылки и метки · 8.8 к фону */
+  --c-secondary: #e8cf2a;   /* золото вордмарка · H 100° — цена, звёзды рейтинга, рамка карточки предмета */
+  --c-danger: #ff9a87;      /* 7.9 к фону */
+  --c-scrim: rgb(20 15 9 / 0.92); /* подложка плашки «название + цена» на фото */
+
+  /* типографика */
+  --f-display: 'Alegreya Variable', Georgia, 'Times New Roman', serif;
+  --f-body: 'Golos Text Variable', system-ui, sans-serif;
+  --t-hero: clamp(2rem, 1.4rem + 2.2vw, 2.5rem);
+  --t-hero-lh: 1;
+  --t-hero-ls: -0.01em;
+  --t-h2: clamp(1.75rem, 1.2rem + 2.2vw, 2.75rem);
+  --t-h2-lh: 1.05;
+  --t-h3: clamp(1.25rem, 1.1rem + 0.6vw, 1.5rem);
+  --t-body: 1.0625rem;
+  --t-body-lh: 1.55;
+  --t-small: 1rem;
+  --t-price: 1.125rem;
+
+  /* пространство: геометрическая шкала */
+  --s-1: 0.25rem; --s-2: 0.5rem; --s-3: 0.75rem; --s-4: 1rem; --s-6: 1.5rem;
+  --s-8: 2rem; --s-12: 3rem; --s-16: 4rem; --s-24: 6rem; --s-32: 8rem;
+  --section-y: clamp(3.5rem, 7vw, 6rem);
+  --content-max: 80rem;
+  --gutter: clamp(1rem, 4vw, 2.5rem);
+
+  /* форма */
+  --r-sm: 3px; --r-md: 4px; --r-lg: 6px; --r-pill: 999px;
+  --tap: 48px;
+
+  /* движение */
+  --e-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --e-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --d-micro: 160ms; --d-state: 220ms; --d-enter: 600ms;
+}

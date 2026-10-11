@@ -1,0 +1,113 @@
+---
+/**
+ * Каталог с фильтрами-чипсами (два измерения) и кнопкой «Отложить», которая добавляет
+ * позицию в форму заявки (textarea[name=items]) и прокручивает к ней. Без фреймворков.
+ *
+ * <Catalog formId="order" action="Отложить" />
+ */
+import { Picture } from 'astro:assets';
+import { catalog, tagLabel, kindLabel } from '../data/catalog';
+
+interface Props { formId?: string; action?: string; priceNote?: string }
+const { formId = 'order', action = 'Отложить', priceNote = 'Цену уточним' } = Astro.props;
+const tags = [...new Set(catalog.flatMap((i) => i.tags))];
+const kinds = [...new Set(catalog.map((i) => i.kind))];
+const rub = (n: number) => new Intl.NumberFormat('ru-RU').format(n) + ' ₽';
+---
+<div class="cat" data-catalog data-form={formId}>
+  {(tags.length > 1 || kinds.length > 1) && (
+    <div class="cat-filters">
+      {tags.length > 1 && (
+        <div class="cat-row" role="group" aria-label={tagLabel}>
+          <span class="cat-lbl">{tagLabel}</span>
+          {tags.map((t) => <button type="button" class="chip" data-f="tag" data-v={t} aria-pressed="false">{t}</button>)}
+        </div>
+      )}
+      {kinds.length > 1 && (
+        <div class="cat-row" role="group" aria-label={kindLabel}>
+          <span class="cat-lbl">{kindLabel}</span>
+          {kinds.map((k) => <button type="button" class="chip" data-f="kind" data-v={k} aria-pressed="false">{k}</button>)}
+        </div>
+      )}
+    </div>
+  )}
+  <p class="cat-status" aria-live="polite"></p>
+  <ul class="cat-grid">
+    {catalog.map((it) => (
+      <li class="card" data-tags={it.tags.join('|')} data-kind={it.kind}>
+        <div class="card-img">
+          {it.image
+            ? typeof it.image === 'string'
+              ? <img src={it.image} alt={it.imageAlt ?? it.name} width="600" height="600" loading="lazy" decoding="async" />
+              : <Picture src={it.image} alt={it.imageAlt ?? it.name} widths={[300, 600]} sizes="(min-width: 900px) 25vw, 50vw" formats={['avif', 'webp']} loading="lazy" />
+            : <span class="card-noimg" aria-hidden="true"></span>}
+        </div>
+        <div class="card-body">
+          <h3 class="card-name">{it.name}</h3>
+          <p class="card-meta">{[it.kind, it.size, it.tags.join(', ')].filter(Boolean).join(' · ')}</p>
+          {it.colors && it.colors.length > 0 && <p class="card-colors">Цвета: {it.colors.join(', ')}</p>}
+          {it.note && <p class="card-note">{it.note}</p>}
+          <div class="card-foot">
+            <span class="card-price">{it.price !== null ? rub(it.price) : priceNote}</span>
+            <a class="card-btn" href={`#${formId}`} data-add={it.name}>{action}</a>
+          </div>
+        </div>
+      </li>
+    ))}
+  </ul>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-catalog]').forEach((root) => {
+    const cards = [...root.querySelectorAll<HTMLElement>('.card')];
+    const status = root.querySelector<HTMLElement>('.cat-status')!;
+    const state: Record<string, string | null> = { tag: null, kind: null };
+    const apply = () => {
+      let n = 0;
+      for (const c of cards) {
+        const ok = (!state.tag || c.dataset.tags!.split('|').includes(state.tag)) && (!state.kind || c.dataset.kind === state.kind);
+        c.hidden = !ok; if (ok) n++;
+      }
+      status.textContent = state.tag || state.kind ? `Показано: ${n}` : '';
+    };
+    root.querySelectorAll<HTMLButtonElement>('.chip').forEach((b) => b.addEventListener('click', () => {
+      const f = b.dataset.f!, v = b.dataset.v!;
+      state[f] = state[f] === v ? null : v;
+      root.querySelectorAll<HTMLButtonElement>(`.chip[data-f="${f}"]`).forEach((x) => x.setAttribute('aria-pressed', String(state[f] === x.dataset.v)));
+      apply();
+    }));
+    root.querySelectorAll<HTMLAnchorElement>('[data-add]').forEach((a) => a.addEventListener('click', () => {
+      const form = document.getElementById(root.dataset.form!);
+      const field = form?.querySelector<HTMLTextAreaElement>('textarea[name=items]');
+      if (!field) return;
+      const name = a.dataset.add!;
+      const list = field.value.split(',').map((s) => s.trim()).filter(Boolean);
+      if (!list.includes(name)) list.push(name);
+      field.value = list.join(', ');
+      a.textContent = 'Добавлено';
+      setTimeout(() => field.focus({ preventScroll: true }), 600);
+    }));
+  });
+</script>
+
+<style>
+  .cat-filters { display: grid; gap: var(--s-3); margin-bottom: var(--s-6); }
+  .cat-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2); }
+  .cat-lbl { color: var(--c-muted); font-size: var(--t-small); min-width: 3.5rem; }
+  .chip { min-height: 44px; padding: 0 var(--s-4); border-radius: var(--r-pill); border: 1px solid var(--c-border); background: var(--c-bg); color: var(--c-text); font: 600 0.95rem var(--f-body); cursor: pointer; }
+  .chip[aria-pressed='true'] { background: var(--c-accent); color: var(--c-on-accent); border-color: var(--c-accent); }
+  .cat-status:empty { display: none; }
+  .cat-status { color: var(--c-muted); font-size: var(--t-small); }
+  .cat-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-4); grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); }
+  .card { display: flex; flex-direction: column; border: 1px solid var(--c-border); border-radius: var(--r-lg); overflow: hidden; background: var(--c-bg); }
+  .card[hidden] { display: none; }
+  .card-img { aspect-ratio: 1; background: var(--c-surface); }
+  .card-img :global(img) { width: 100%; height: 100%; object-fit: contain; }
+  .card-noimg { display: block; width: 100%; height: 100%; }
+  .card-body { display: flex; flex-direction: column; gap: var(--s-2); padding: var(--s-4); flex: 1; }
+  .card-name { font-size: var(--t-h3); }
+  .card-meta, .card-colors, .card-note { margin: 0; color: var(--c-muted); font-size: var(--t-small); }
+  .card-foot { margin-top: auto; padding-top: var(--s-3); display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); }
+  .card-price { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .card-btn { min-height: var(--tap); display: inline-flex; align-items: center; padding: 0 var(--s-4); border-radius: var(--r-md); background: var(--c-accent); color: var(--c-on-accent); font-weight: 600; text-decoration: none; }
+</style>

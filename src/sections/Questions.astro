@@ -1,0 +1,98 @@
+---
+/**
+ * «Частые вопросы»: аккордеон на <details> (адаптация модуля Faq: ответ может содержать ссылку),
+ * справа липкий натюрморт. Ответы — только факты из analysis.md. FAQPage отдаём в JSON-LD текстом.
+ */
+import Section from '../components/Section.astro';
+import { Picture } from 'astro:assets';
+import { business } from '../data/site';
+import { photos } from '../data/menu';
+
+const tg = `https://t.me/${business.links.telegram}`;
+
+interface Item { q: string; text: string; id: string }
+const items: Item[] = [
+  { id: 'book', q: 'Как забронировать стол?',
+    text: `Оставь заявку в форме на сайте или позвони по номеру ${business.phone.display}. Можно и написать в Telegram.` },
+  { id: 'hookah', q: 'Есть ли кальян?',
+    text: 'Да: аренда кальяна есть, она указана на сайте таверны. Вкусы и цены уточняй у персонала.' },
+  { id: 'pets', q: 'Можно ли с животными?',
+    text: 'Да, на Яндекс.Картах у таверны отмечено «можно с животными».' },
+  { id: 'games', q: 'Когда игровые вечера?',
+    text: `Со среды по воскресенье, игровые сессии стартуют в 19:00. Анонсы мы выкладываем в Telegram.` },
+  { id: 'more', q: 'Что есть, кроме еды?',
+    text: 'Крафтовое пиво, настольные игры, вечера D&D и MTG, ретро-игровые автоматы, мерч, Wi-Fi и станция зарядки.' },
+];
+
+const ld = {
+  '@context': 'https://schema.org', '@type': 'FAQPage',
+  mainEntity: items.map((i) => ({ '@type': 'Question', name: i.q, acceptedAnswer: { '@type': 'Answer', text: i.text } })),
+};
+---
+<Section id="faq" title="Частые вопросы">
+  <div class="faq-grid">
+    <figure class="faq-photo frame">
+      <Picture
+        src={photos['dish-skryten']}
+        alt="Тарелка с шашлычком из курицы и картофелем фри на тёмном столе, рядом человеческий череп, кованые щипцы, рог для питья и ремень с кельтским узором"
+        widths={[480, 720, 1024]}
+        sizes="(min-width: 1024px) 40vw, 100vw"
+        formats={['avif', 'webp']}
+      />
+      <figcaption class="plaque faq-plaque">Реквизит таверны</figcaption>
+    </figure>
+
+    <div class="faq">
+      <details open>
+        <summary>{items[0].q}</summary>
+        <p>Оставь заявку в&nbsp;<a class="link" href="#feast">форме на&nbsp;сайте</a> или позвони: <a class="link num" href={`tel:${business.phone.e164}`}>{business.phone.display}</a>. Можно и&nbsp;написать <a class="link" href={tg} rel="noopener">в&nbsp;Telegram</a>.</p>
+      </details>
+      <details>
+        <summary>{items[1].q}</summary>
+        <p>Да: аренда кальяна есть, она указана на&nbsp;сайте таверны. Вкусы и&nbsp;цены уточняй у&nbsp;персонала.</p>
+      </details>
+      <details>
+        <summary>{items[2].q}</summary>
+        <p>Да, на&nbsp;<a class="link" href={business.links.yandexMaps} rel="noopener">Яндекс.Картах</a> у&nbsp;таверны отмечено «можно с&nbsp;животными».</p>
+      </details>
+      <details>
+        <summary>{items[3].q}</summary>
+        <p>Со&nbsp;среды по&nbsp;воскресенье, игровые сессии стартуют в&nbsp;<span class="num">19:00</span>. Анонсы мы выкладываем <a class="link" href={tg} rel="noopener">в&nbsp;Telegram</a>.</p>
+      </details>
+      <details>
+        <summary>{items[4].q}</summary>
+        <p>Крафтовое пиво, настольные игры, вечера D&amp;D и&nbsp;MTG, ретро-игровые автоматы, мерч, Wi-Fi и&nbsp;станция зарядки.</p>
+      </details>
+      <a class="btn btn-primary faq-cta" href="#feast">Забронировать стол</a>
+    </div>
+  </div>
+  <script type="application/ld+json" set:html={JSON.stringify(ld)} />
+</Section>
+
+<style>
+  .faq-grid { display: grid; gap: var(--s-8); align-items: start; }
+  .faq-photo { position: relative; margin: 0; aspect-ratio: 16 / 9; }
+  .faq-photo :global(picture), .faq-photo :global(img) { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .faq-plaque { position: absolute; left: var(--s-3); bottom: var(--s-3); }
+  .faq { display: grid; align-content: start; }
+  details { border-bottom: 1px solid var(--c-border); }
+  details:first-child { border-top: 1px solid var(--c-border); }
+  summary {
+    min-height: var(--tap); display: flex; align-items: center; justify-content: space-between; gap: var(--s-4);
+    padding: var(--s-3) 0; cursor: pointer; list-style: none;
+    font: 700 var(--t-h3)/1.2 var(--f-display); color: var(--c-text);
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: '+'; flex: none; font-size: 1.75rem; line-height: 1; color: var(--c-accent-text); transition: transform var(--d-state) var(--e-out); }
+  details[open] summary::after { transform: rotate(45deg); }
+  summary:focus-visible { outline: 2px solid var(--c-accent-text); outline-offset: 2px; }
+  details p { margin: 0 0 var(--s-4); color: var(--c-muted); max-width: 60ch; }
+  .faq-cta { margin-top: var(--s-8); justify-self: start; }
+  @media (prefers-reduced-motion: reduce) { summary::after { transition: none; } }
+
+  @media (min-width: 1024px) {
+    .faq-grid { grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--s-12); }
+    .faq { grid-column: 1 / span 7; grid-row: 1; }
+    .faq-photo { grid-column: 8 / span 5; grid-row: 1; aspect-ratio: 3 / 4; position: sticky; top: var(--s-24); }
+  }
+</style>

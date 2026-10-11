@@ -1,0 +1,130 @@
+---
+/**
+ * Секция «Отзывы»: счётчики (Яндекс Карты, 2ГИС) и лента дословных цитат со scroll-snap.
+ * Цитаты — с сайта бизнеса bar-zag-zag.clients.site (отзывы с Яндекс Карт), слова не менялись.
+ */
+import { Picture } from 'astro:assets';
+import Section from '../components/Section.astro';
+import { business } from '../data/site';
+import { photos } from '../data/menu';
+
+const { yandex, twoGis } = business.rating;
+const asOf = 'на 8 октября 2026';
+
+const quotes = [
+  {
+    name: 'Ярослав Н.',
+    date: '6 октября',
+    text: 'Отличное меню, конкурсы огонь, народ классный! Стоит прийти один раз и захочется остаться! Пей, пей пей!',
+    photo: photos['hall-orc'],
+    alt: 'Зелёный орк-скульптура за столом таверны показывает «козу»',
+  },
+  {
+    name: 'Галина',
+    date: '28 сентября',
+    text: 'Оригинальное местечко, с творческим заходом на интерьер, меню- вообще, как расписано. По моему мнением хорошо подходит для мужских брутальных встреч (посидеть, отдохнуть…).',
+    photo: photos['dish-svitki-ognya'],
+    alt: 'Блюдо «Свитки огня» — спринг роллы с соусом шрирача',
+  },
+  {
+    name: 'Мария Шилова',
+    date: '4 октября',
+    text: 'Прекрасное место с чудесной атмосферой! Можно замечательно провести время не только за едой и вкуснейшими напитками, но и за настолками и другими играми. Реккомендуется к посещению всем, а не только знатокам вархамера. За орду!',
+    photo: photos['interior-mugs'],
+    alt: 'Стол таверны: две кружки с пенным пивом и жареные ножки на деревянном блюде, сзади рука орка',
+  },
+  {
+    name: 'Дарья Маркина',
+    date: '23 сентября',
+    text: 'Хорошее место, приятный коллектив, много интересных квестов проводятся, антураж на высоте, вкусные кальяны, прекрасное пиво и зе бест пельмешки :3',
+    photo: photos['dish-elunnye-kletski'],
+    alt: 'Блюдо «Элунные клецки» — самолепные пельмеши в сливочно-грибном соусе',
+  },
+];
+---
+<Section id="reviews" title="Отзывы">
+  <ul class="counters">
+    <li class="counter">
+      <p class="big big-star num"><span aria-hidden="true">★ </span><span class="sr-only">Оценка </span>{yandex.value}</p>
+      <p class="cap">на Яндекс Картах</p>
+    </li>
+    <li class="counter">
+      <p class="big num">{yandex.ratings}</p>
+      <p class="cap">оценок</p>
+    </li>
+    <li class="counter">
+      <p class="big num">{yandex.reviews}</p>
+      <p class="cap">отзыва</p>
+      <a class="link src" href={yandex.url} target="_blank" rel="noopener">Яндекс Карты<span class="sr-only"> (откроется в новой вкладке)</span></a>
+      <p class="date">{asOf}</p>
+    </li>
+    <li class="counter">
+      <p class="big num"><span class="gold" aria-hidden="true">★&nbsp;{twoGis.value}</span><span class="sr-only">Оценка {twoGis.value} из 5.</span></p>
+      <p class="cap">{twoGis.ratings} оценка в 2ГИС</p>
+      <a class="link src" href={twoGis.url} target="_blank" rel="noopener">2ГИС<span class="sr-only"> (откроется в новой вкладке)</span></a>
+      <p class="date">{asOf}</p>
+    </li>
+  </ul>
+
+  <div class="rail" tabindex="0" role="region" aria-label="Отзывы гостей, листай в сторону">
+    <ul class="track">
+      {quotes.map((q) => (
+        <li class="card">
+          <figure class="frame photo">
+            <Picture src={q.photo} alt={q.alt} formats={['avif', 'webp']} widths={[360, 720]} sizes="(min-width: 1024px) 22rem, 80vw" />
+          </figure>
+          <blockquote class="quote">
+            <p>«{q.text}»</p>
+          </blockquote>
+          <div class="who">
+            <p class="name">{q.name}</p>
+            <p class="when">{q.date}</p>
+            <p class="rec"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Рекомендую</p>
+          </div>
+        </li>
+      ))}
+    </ul>
+  </div>
+
+  <p class="all"><a class="link" href={yandex.url} target="_blank" rel="noopener">Все {yandex.reviews} отзыва на&nbsp;Яндекс Картах<span class="sr-only"> (откроется в новой вкладке)</span> →</a></p>
+</Section>
+
+<style>
+  .counters {
+    list-style: none; margin: 0 0 var(--s-12); padding: 0;
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-8) var(--s-6);
+  }
+  @media (min-width: 900px) { .counters { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .counter { border-top: 1px solid var(--c-border); padding-top: var(--s-4); display: flex; flex-direction: column; gap: var(--s-1); }
+  .counter p { margin: 0; }
+  .big { font: 800 clamp(2.5rem, 1.6rem + 3.4vw, 4rem)/1 var(--f-display); color: var(--c-text); }
+  .big-star { color: var(--c-secondary); }
+  .gold { color: var(--c-secondary); }
+  .cap { color: var(--c-muted); font-size: var(--t-small); }
+  .src { display: inline-flex; align-items: center; min-height: 44px; font-size: var(--t-small); }
+  .date { color: var(--c-muted); font-size: var(--t-small); }
+
+  .rail {
+    overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain;
+    margin-inline: calc(var(--gutter) * -1); padding-inline: var(--gutter); scroll-padding-inline: var(--gutter);
+    padding-bottom: var(--s-4); scrollbar-color: var(--c-border) transparent;
+  }
+  .rail:focus-visible { outline: 2px solid var(--c-accent-text); outline-offset: 2px; }
+  .track { list-style: none; margin: 0; padding: 0; display: flex; gap: var(--s-4); width: max-content; }
+  .card {
+    scroll-snap-align: start; flex: 0 0 min(80vw, 22rem); display: flex; flex-direction: column;
+    background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-md); padding: var(--s-4); gap: var(--s-4);
+  }
+  .photo { margin: 0; aspect-ratio: 4 / 3; border-radius: var(--r-sm); }
+  .photo :global(picture), .photo :global(img) { display: block; width: 100%; height: 100%; }
+  .quote { margin: 0; flex: 1; }
+  .quote p { margin: 0; font-size: var(--t-body); line-height: var(--t-body-lh); }
+  .who { display: grid; grid-template-columns: 1fr auto; gap: var(--s-1) var(--s-3); align-items: baseline; border-top: 1px solid var(--c-border); padding-top: var(--s-3); }
+  .who p { margin: 0; }
+  .name { font: 700 var(--t-h3)/1.1 var(--f-display); }
+  .when { color: var(--c-muted); font-size: var(--t-small); text-align: right; }
+  .rec { grid-column: 1 / -1; display: inline-flex; align-items: center; gap: var(--s-2); color: var(--c-accent-text); font: 700 var(--t-small)/1.2 var(--f-display); }
+
+  .all { margin: var(--s-6) 0 0; }
+  .all .link { display: inline-flex; align-items: center; min-height: 44px; font-size: var(--t-body); }
+</style>

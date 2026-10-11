@@ -1,0 +1,116 @@
+---
+/**
+ * «Пир для клана» (DESIGN.md §5 feast): бегущая строка, набор «Клановый пир», три формата, форма брони.
+ * Форма — OrderForm (id="order"): textarea[name=items] заполняет каталог.
+ */
+import { Picture } from 'astro:assets';
+import DishCapsule from '../components/DishCapsule.astro';
+import OrderForm from '../components/OrderForm.astro';
+import { dishes, photos } from '../data/menu';
+import { business } from '../data/site';
+
+const pir = dishes.find((d) => d.slug === 'klanovyj-pir')!;
+const mugs = photos['dish-kabanyi-ryobra'];
+const phrases = ['Банкеты', 'Дни рождения', 'Корпоративы', 'Клановый пир 4 950 ₽'];
+const formats = [
+  { name: 'Банкеты', text: 'Собери орду и поднимите кружки за общий повод. Условия обсудим по телефону.' },
+  { name: 'Дни рождения', text: 'Именинник получает орду гостей и повод для тоста. Остальное — на словах.' },
+  { name: 'Корпоративы', text: 'Коллеги уже в одном клане, осталось сесть за один стол. Формат согласуем заранее.' },
+];
+const copies = [0, 1, 2, 3, 4, 5];
+---
+<section id="feast" data-section="feast" aria-labelledby="feast-title" class="feast">
+  <div class="marquee" tabindex="0" role="group" aria-label="Банкеты, дни рождения, корпоративы, Клановый пир 4 950 рублей">
+    <div class="track" aria-hidden="true">
+      {copies.map(() => (
+        <p class="run">
+          {phrases.map((p) => (<><span>{p}</span><span class="dash">—</span></>))}
+        </p>
+      ))}
+    </div>
+  </div>
+
+  <div class="container-x body section-y">
+    <h2 id="feast-title" class="title">Пир для клана</h2>
+
+    <div class="grid">
+      <div class="left">
+        <p class="lead">Собираешь орду на&nbsp;праздник или просто голодных друзей? Бери Клановый пир за&nbsp;4&nbsp;950&nbsp;₽ и&nbsp;бронируй стол. Состав набора уточни у&nbsp;таверны.</p>
+
+        <div class="showcase">
+          <DishCapsule dish={pir} ratio="4 / 3" widths={[480, 720, 1024]} sizes="(min-width: 1024px) 44vw, 92vw" showPortion={false} />
+        </div>
+
+        <ul class="formats" role="list">
+          {formats.map((f) => (
+            <li class="format">
+              <h3 class="f-name">{f.name}</h3>
+              <p>{f.text}</p>
+            </li>
+          ))}
+        </ul>
+
+        <p class="call">Расскажи, что за&nbsp;повод, и&nbsp;мы подскажем, как накрыть: <a class="link num" href={`tel:${business.phone.e164}`}>{business.phone.display}</a>.</p>
+
+        {mugs && (
+          <figure class="frame strip">
+            <Picture src={mugs} alt="Блюдо «Кабаньи рёбра в пиве» на деревянном столе таверны" widths={[480, 720, 1024]} sizes="(min-width: 1024px) 44vw, 92vw" formats={['avif', 'webp']} />
+          </figure>
+        )}
+      </div>
+
+      <div class="right">
+        <div class="formbox">
+          <OrderForm
+            id="order"
+            title="Забронировать стол"
+            submitLabel="Забронировать стол"
+            itemsLabel="Блюда к столу"
+            itemsPlaceholder="Сюда попадут блюда, которые ты выберешь в меню"
+            successText="Бронь принята. Перезвоним и подтвердим стол."
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .feast { background: var(--c-surface); overflow-x: clip; }
+
+  .marquee {
+    background: var(--c-accent); color: var(--c-on-accent); overflow: hidden;
+    font: 700 var(--t-h3)/1 var(--f-display);
+  }
+  .marquee:focus-visible { outline: 2px solid var(--c-text); outline-offset: -4px; }
+  .track { display: flex; width: max-content; animation: feast-run 40s linear infinite; will-change: transform; }
+  .marquee:hover .track, .marquee:focus-within .track, .marquee:focus .track { animation-play-state: paused; }
+  .run { display: flex; flex: none; margin: 0; padding: var(--s-4) 0; white-space: nowrap; }
+  .run span { padding-right: var(--s-6); }
+  .dash { opacity: 0.7; }
+  @keyframes feast-run { to { transform: translateX(-50%); } }
+  @media (prefers-reduced-motion: reduce) { .track { animation: none; } }
+
+  .body { padding-top: var(--section-y); }
+  .title { margin: 0 0 var(--s-8); max-width: 22ch; }
+  .grid { display: grid; gap: var(--s-12); }
+  .lead { margin: 0 0 var(--s-6); max-width: 60ch; }
+  .showcase { margin-bottom: var(--s-6); }
+  .formats { list-style: none; margin: 0 0 var(--s-6); padding: 0; display: grid; gap: var(--s-4); }
+  .format { background: var(--c-sunken); border: 1px solid var(--c-border); border-radius: var(--r-md); padding: var(--s-4) var(--s-6); }
+  .format p { margin: var(--s-2) 0 0; color: var(--c-muted); }
+  .f-name { margin: 0; font-size: var(--t-h3); }
+  .call { margin: 0 0 var(--s-6); }
+  .call :global(.link) { text-decoration: underline; }
+  .strip { margin: 0; aspect-ratio: 16 / 9; }
+  .strip :global(picture), .strip :global(img) { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .formbox { background: var(--c-bg); border: 1px solid var(--c-border); border-radius: var(--r-md); padding: var(--s-6); }
+
+  @media (min-width: 1024px) {
+    .grid { grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--s-8); align-items: start; }
+    .left { grid-column: span 7; }
+    .right { grid-column: span 5; position: sticky; top: var(--s-8); }
+    .formats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .format { padding: var(--s-4); }
+  }
+</style>

@@ -1,0 +1,142 @@
+---
+/**
+ * Сигнатура «Карточка предмета» (DESIGN.md С1): одна карточка на страницу.
+ * Десктоп (hover + точный указатель): наведение или фокус на капсуле — карточка над капсулой.
+ * Тач: только тап по «i» — карточка выезжает снизу; закрывается крестиком, тапом мимо и Esc.
+ * Сама по себе не открывается никогда. Данные — из data-атрибутов DishCapsule (из menu.ts).
+ */
+---
+<div id="item-card" class="ic" role="dialog" aria-modal="false" aria-labelledby="ic-title" hidden>
+  <p id="ic-title" class="ic-title"></p>
+  <dl class="ic-rows">
+    <div data-row="cat"><dt>Еда</dt><dd></dd></div>
+    <div data-row="portion"><dt>Вес</dt><dd class="num"></dd></div>
+    <div data-row="comp"><dt>Состав</dt><dd></dd></div>
+  </dl>
+  <p class="ic-price"><span>Цена:</span> <span class="price" data-price></span></p>
+  <button class="ic-close" type="button" aria-label="Закрыть карточку" data-ic-close>
+    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24"><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+  </button>
+</div>
+
+<style>
+  .ic {
+    position: absolute; z-index: 60; width: 300px; max-width: calc(100vw - 24px);
+    padding: var(--s-4) var(--s-4) var(--s-3); border-radius: var(--r-md);
+    background: var(--c-sunken); border: 1px solid var(--c-secondary);
+    box-shadow: inset 0 0 0 3px var(--c-sunken), inset 0 0 0 4px rgb(232 207 42 / 0.35);
+    opacity: 0; transform: translateY(4px); pointer-events: none;
+    transition: opacity var(--d-micro) var(--e-out), transform var(--d-micro) var(--e-out);
+  }
+  .ic[hidden] { display: none; }
+  .ic.is-open { opacity: 1; transform: none; pointer-events: auto; }
+  .ic-title { margin: 0 44px var(--s-2) 0; font: 700 var(--t-h3)/1.15 var(--f-display); color: var(--c-secondary); }
+  .ic-rows { margin: 0; display: grid; gap: var(--s-1); }
+  .ic-rows div { display: flex; gap: var(--s-2); font-size: var(--t-small); line-height: 1.4; }
+  .ic-rows dt { color: var(--c-text); flex: none; }
+  .ic-rows dt::after { content: ':'; }
+  .ic-rows dd { margin: 0; color: var(--c-muted); }
+  .ic-rows div[data-row='cat'] dt::after { content: ' —'; }
+  .ic-price { margin: var(--s-3) 0 0; padding-top: var(--s-2); border-top: 1px solid var(--c-border); font: 700 var(--t-price)/1.2 var(--f-display); }
+  .ic-close {
+    position: absolute; top: 4px; right: 4px; width: 44px; height: 44px; border: 0; padding: 0;
+    display: none; place-items: center; background: transparent; color: var(--c-text); cursor: pointer;
+  }
+  .ic.is-sheet { position: fixed; left: 12px; right: 12px; bottom: 12px; width: auto; max-width: none; transform: translateY(16px); }
+  .ic.is-sheet.is-open { transform: none; transition-timing-function: var(--e-in-out); }
+  .ic.is-sheet .ic-close { display: grid; }
+  @media (prefers-reduced-motion: reduce) {
+    .ic, .ic.is-sheet { transform: none; }
+  }
+</style>
+
+<script>
+  const card = document.getElementById('item-card') as HTMLElement | null;
+  if (card) {
+    const fine = matchMedia('(hover: hover) and (pointer: fine)');
+    const title = card.querySelector('#ic-title') as HTMLElement;
+    const price = card.querySelector('[data-price]') as HTMLElement;
+    let current: HTMLElement | null = null;
+    let opener: HTMLElement | null = null;
+    let hideTimer = 0;
+
+    const fill = (el: HTMLElement) => {
+      title.textContent = el.dataset.name ?? '';
+      price.textContent = el.dataset.price ?? '';
+      for (const key of ['cat', 'portion', 'comp'] as const) {
+        const row = card.querySelector(`[data-row="${key}"]`) as HTMLElement;
+        const value = el.dataset[key] ?? '';
+        row.hidden = !value;
+        (row.querySelector('dd') as HTMLElement).textContent = value;
+      }
+    };
+
+    const place = (el: HTMLElement) => {
+      const r = el.getBoundingClientRect();
+      const w = card.offsetWidth;
+      const h = card.offsetHeight;
+      const left = Math.min(Math.max(r.left + window.scrollX, 12), document.documentElement.clientWidth - w - 12);
+      const above = r.top - h - 8 > 72;
+      const top = above ? r.top + window.scrollY - h - 8 : r.bottom + window.scrollY + 8;
+      card.style.left = `${left}px`;
+      card.style.top = `${top}px`;
+    };
+
+    const open = (el: HTMLElement, sheet: boolean) => {
+      window.clearTimeout(hideTimer);
+      current = el;
+      fill(el);
+      card.classList.toggle('is-sheet', sheet);
+      card.hidden = false;
+      if (sheet) {
+        card.style.left = card.style.top = '';
+      } else {
+        place(el);
+      }
+      requestAnimationFrame(() => card.classList.add('is-open'));
+    };
+
+    const close = (returnFocus = false) => {
+      if (card.hidden) return;
+      card.classList.remove('is-open');
+      current = null;
+      hideTimer = window.setTimeout(() => { card.hidden = true; }, 180);
+      opener?.setAttribute('aria-expanded', 'false');
+      if (returnFocus) opener?.focus();
+      opener = null;
+    };
+
+    document.addEventListener('pointerover', (e) => {
+      if (!fine.matches) return;
+      const el = (e.target as Element).closest<HTMLElement>('[data-dish]');
+      if (el && el !== current) open(el, false);
+    });
+    document.addEventListener('pointerout', (e) => {
+      if (!fine.matches || !current) return;
+      const to = e.relatedTarget as Element | null;
+      if (!to || !current.contains(to)) close();
+    });
+    document.addEventListener('focusin', (e) => {
+      const el = (e.target as Element).closest<HTMLElement>('[data-dish]');
+      if (fine.matches && el) open(el, false);
+      else if (fine.matches && current && !card.contains(e.target as Node)) close();
+    });
+    document.addEventListener('click', (e) => {
+      const t = e.target as Element;
+      const btn = t.closest<HTMLElement>('[data-dish-i]');
+      if (btn) {
+        const el = btn.closest<HTMLElement>('[data-dish]');
+        if (!el) return;
+        if (current === el && !fine.matches) { close(); return; }
+        opener = btn;
+        btn.setAttribute('aria-expanded', 'true');
+        open(el, !fine.matches);
+        return;
+      }
+      if (t.closest('[data-ic-close]')) { close(true); return; }
+      if (!card.contains(t)) close();
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(true); });
+    window.addEventListener('resize', () => close());
+  }
+</script>

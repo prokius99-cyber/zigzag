@@ -1,0 +1,106 @@
+---
+/** «Игровые вечера»: журнал заданий + липкое превью 4:3 (DESIGN.md §5 events). Факты: t.me/s/bar_zag_zag. */
+import { Picture } from 'astro:assets';
+import Section from '../components/Section.astro';
+import { business } from '../data/site';
+import { photos } from '../data/menu';
+
+const schedule = business.eventsSchedule.charAt(0).toUpperCase() + business.eventsSchedule.slice(1);
+
+const quests = [
+  { title: 'Magic: The Gathering', tags: ['Limited', 'Commander', 'Constructed', 'Modern'], note: 'Четыре формата — выбирай свой.', photo: 'dish-imperator-30k', alt: 'Блюдо «Император 30К» на тёмном столе, рядом фигурки: реквизит таверны' },
+  { title: 'D&D 3.5/5 с мастером', tags: [], note: 'Партию ведёт мастер.', photo: 'dish-orki-korki', alt: 'Блюдо «Орки-корки» с фигурками на столе таверны' },
+  { title: 'Квест «Приют неудачливых приключенцев»', tags: [], note: 'Собирай партию и отправляйся.', photo: 'dish-noga-dolgonoga', alt: 'Блюдо «Нога лесного долгонога» с реквизитом таверны' },
+  { title: 'Косплей-конкурсы', tags: [], note: 'Доставай костюм, Орда оценит.', photo: 'dish-skryten', alt: 'Блюдо «Поджаренный скрытень» с черепом и склянками: реквизит таверны' },
+  { title: 'Покрас миниатюр', tags: [], note: 'Даты и подробности — в анонсах Telegram.', photo: 'dish-zakuska-prygolapa', alt: '«Закуска из прыголапа» на столе с фигурками: реквизит таверны' },
+];
+---
+<Section id="events" title="Игровые вечера">
+  <div class="events" data-events>
+    <div class="journal">
+      <p class="journal-head"><span class="shelf-label">Журнал заданий</span> <span class="when num">{schedule}</span></p>
+      <ul class="rows">
+        {quests.map((q, i) => (
+          <li>
+            <button type="button" class="row" data-idx={i} aria-pressed={i === 0 ? 'true' : 'false'}>
+              <span class="thumb frame">
+                <Picture src={photos[q.photo]} alt="" formats={['avif', 'webp']} widths={[160, 320]} sizes="120px" />
+              </span>
+              <span class="body">
+                <span class="title">{q.title}</span>
+                <span class="note">{q.note}</span>
+                {q.tags.length > 0 && (
+                  <span class="tags">{q.tags.map((t) => <span class="tag">{t}</span>)}</span>
+                )}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <div class="actions">
+        <a class="btn btn-primary" href="#feast">Забронировать стол</a>
+        <a class="btn btn-secondary" href={`https://t.me/${business.links.telegram}`} target="_blank" rel="noopener">Анонсы в Telegram</a>
+      </div>
+    </div>
+
+    <figure class="preview frame" aria-label="Реквизит таверны">
+      {quests.map((q, i) => (
+        <div class="shot" data-active={i === 0 ? 'true' : 'false'} data-idx={i}>
+          <Picture src={photos[q.photo]} alt={q.alt} formats={['avif', 'webp']} widths={[480, 800, 1024]} sizes="(min-width: 1024px) 40vw, 100vw" />
+        </div>
+      ))}
+      <figcaption class="plaque cap">Реквизит таверны</figcaption>
+    </figure>
+  </div>
+</Section>
+
+<style>
+  .events { display: grid; gap: var(--s-8); }
+  .journal-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--s-2) var(--s-4); margin: 0 0 var(--s-4); padding-bottom: var(--s-3); border-bottom: 1px solid var(--c-border); }
+  .when { font: 700 var(--t-h3)/1.15 var(--f-display); color: var(--c-text); }
+  .rows { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-2); }
+  .row {
+    display: flex; gap: var(--s-4); align-items: center; width: 100%; min-height: var(--tap); text-align: left; cursor: pointer;
+    padding: var(--s-3); color: var(--c-text); background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-md);
+    transition: background-color var(--d-micro) var(--e-out), border-color var(--d-micro) var(--e-out);
+  }
+  .row:hover, .row[aria-pressed='true'] { background: var(--c-sunken); border-color: var(--c-accent); }
+  .thumb { flex: none; width: 96px; aspect-ratio: 4 / 3; display: block; }
+  .thumb :global(img) { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .body { display: grid; gap: var(--s-2); min-width: 0; }
+  .title { font: 700 var(--t-h3)/1.15 var(--f-display); }
+  .note { color: var(--c-muted); font-size: var(--t-small); line-height: var(--t-small-lh, 1.4); }
+  .tags { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+  .actions { display: flex; flex-wrap: wrap; gap: var(--s-3); margin-top: var(--s-6); }
+  .preview { display: none; margin: 0; position: relative; aspect-ratio: 4 / 3; }
+  .shot { position: absolute; inset: 0; opacity: 0; transition: opacity var(--d-state) var(--e-out); }
+  .shot[data-active='true'] { opacity: 1; }
+  .shot :global(img) { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .cap { position: absolute; left: var(--s-3); bottom: var(--s-3); }
+
+  @media (min-width: 1024px) {
+    .events { grid-template-columns: 7fr 5fr; gap: var(--s-12); align-items: start; }
+    .thumb { display: none; }
+    .row { padding: var(--s-4); }
+    .preview { display: block; position: sticky; top: calc(64px + var(--s-6)); }
+  }
+  @media (max-width: 420px) {
+    .thumb { width: 80px; }
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-events]').forEach((root) => {
+    const rows = root.querySelectorAll<HTMLElement>('.row');
+    const shots = root.querySelectorAll<HTMLElement>('.shot');
+    const show = (i: string | undefined) => {
+      rows.forEach((r) => r.setAttribute('aria-pressed', String(r.dataset.idx === i)));
+      shots.forEach((s) => s.setAttribute('data-active', String(s.dataset.idx === i)));
+    };
+    rows.forEach((r) => {
+      r.addEventListener('mouseenter', () => show(r.dataset.idx));
+      r.addEventListener('focus', () => show(r.dataset.idx));
+      r.addEventListener('click', () => show(r.dataset.idx));
+    });
+  });
+</script>

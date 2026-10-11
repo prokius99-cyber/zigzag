@@ -1,0 +1,271 @@
+---
+/**
+ * Галерея — «кинозал» на --c-sunken (DESIGN.md §5 → gallery).
+ * Большой кадр 16:9 + счётчик «7 / 24», лента миниатюр 96×72, полноэкранный просмотр (адаптация модуля gallery).
+ * Без JS лента превращается в сетку ссылок на все 24 фото.
+ */
+import { getImage } from 'astro:assets';
+import { dishes, photos } from '../data/menu';
+
+interface Frame { key: string; title: string; alt: string; plaque?: string }
+
+const dishName = (key: string) => dishes.find((d) => d.photo === key)?.name ?? '';
+const dish = (key: string, alt?: string, plaque?: string): Frame => {
+  const n = dishName(key);
+  return { key, title: n, alt: alt ?? `Блюдо «${n}» на тёмном фоне`, plaque };
+};
+const prop = 'Реквизит таверны';
+
+const frames: Frame[] = [
+  { key: 'interior-hero-orcs', title: 'Зал таверны', alt: 'Зал таверны ЗАГ-ЗАГ целиком: орки на стене, ряд кружек и вшитая вывеска', plaque: 'Зал таверны' },
+  dish('dish-orki-korki', 'Блюдо «Орки-корки» с фигурками и черепами из реквизита таверны', prop),
+  dish('dish-imperator-40k', 'Блюдо «Император 40К» с фигуркой из реквизита таверны', prop),
+  { key: 'interior-face', title: 'Лицо орка', alt: 'Лицо зелёного орка-скульптуры: клыки и тяжёлый взгляд', plaque: 'Деталь зала' },
+  dish('dish-skryten', 'Блюдо «Поджаренный скрытень» рядом с черепом и склянками из реквизита таверны', prop),
+  dish('dish-noga-dolgonoga', 'Блюдо «Нога лесного долгонога» с реквизитом таверны', prop),
+  { key: 'hall-orc', title: 'Орк показывает «козу»', alt: 'Зелёный орк-скульптура за столом показывает «козу»', plaque: 'Деталь зала' },
+  dish('dish-imperator-30k', 'Блюдо «Император 30К» с фигуркой из реквизита таверны', prop),
+  dish('dish-zakuska-prygolapa', 'Блюдо «Закуска из прыголапа» с реквизитом таверны', prop),
+  { key: 'hall-table', title: 'Стол орков', alt: 'Деревянные кружки с пеной и окорока на столе орков', plaque: 'Деталь зала' },
+  dish('dish-borsch-gordyni'),
+  dish('dish-steik-cherporoga'),
+  { key: 'hall-tables', title: 'Глубина зала', alt: 'Грубый деревянный стол и стулья в глубине зала, у окна — орк-скульптура', plaque: 'Деталь зала' },
+  dish('dish-svitki-ognya'),
+  dish('dish-serdca-porchi'),
+  { key: 'hall-lamp', title: 'Фонарь', alt: 'Кованый фонарь на тёмной стене зала', plaque: 'Деталь зала' },
+  dish('dish-dyhanie-drakona'),
+  dish('dish-krylya-pustoty'),
+  { key: 'hall-guard', title: 'Орк в доспехе', alt: 'Орк в железном доспехе и шлеме за столом', plaque: 'Деталь зала' },
+  dish('dish-kabanyi-ryobra'),
+  dish('dish-elunnye-kletski'),
+  { key: 'hall-drinker', title: 'Пьющий орк', alt: 'Орк у кирпичной стены пьёт из кружки', plaque: 'Деталь зала' },
+  dish('dish-gryzlodyor'),
+  dish('dish-bochok-sema'),
+];
+
+const items = await Promise.all(
+  frames.map(async (f) => {
+    const src = photos[f.key];
+    const stage = await getImage({ src, width: Math.min(1280, src.width), format: 'webp', quality: 80 });
+    const full = await getImage({ src, width: Math.min(2400, src.width), format: 'webp', quality: 82 });
+    const thumb = await getImage({ src, width: 192, height: 144, fit: 'cover', format: 'webp', quality: 70 });
+    return { ...f, stage: stage.src, full: full.src, thumb: thumb.src, w: stage.attributes.width, h: stage.attributes.height, hero: f.key === 'interior-hero-orcs' };
+  }),
+);
+const total = items.length;
+const first = items[0];
+---
+<section id="gallery" data-section="gallery" aria-labelledby="gallery-title" class="gallery section-y" data-gallery>
+  <div class="container-x">
+    <h2 id="gallery-title" class="gallery-title">Галерея</h2>
+    <p class="gallery-lead">{total} {new Intl.PluralRules('ru').select(total) === 'one' ? 'кадр' : new Intl.PluralRules('ru').select(total) === 'few' ? 'кадра' : 'кадров'}: зал, детали и блюда. Листай стрелками ← →, тапай по ленте или разверни кадр на весь экран.</p>
+
+    <div class="viewer">
+      <div class="stage" role="group" aria-roledescription="просмотрщик" aria-label="Большой кадр" tabindex="0" data-stage>
+        <img class="slide is-on" data-slide alt={first.alt} src={first.stage} width="1280" height="720" decoding="async" style={`--w:${first.w};--h:${first.h}`} data-fit={first.hero ? 'cover' : 'contain'} />
+        <img class="slide" data-slide alt="" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" width="1280" height="720" decoding="async" aria-hidden="true" />
+        <span class="plaque stage-plaque" data-plaque>{first.plaque}</span>
+        <p class="plaque stage-count num" data-count aria-live="polite">1 / {total}</p>
+        <button class="stage-btn stage-prev" type="button" aria-label="Предыдущий кадр" data-prev hidden>‹</button>
+        <button class="stage-btn stage-next" type="button" aria-label="Следующий кадр" data-next hidden>›</button>
+        <button class="stage-btn stage-full" type="button" aria-label="Открыть кадр на весь экран" data-open hidden>
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></svg>
+        </button>
+      </div>
+      <p class="caption" data-caption>{first.title}</p>
+
+      <div class="strip" tabindex="0" aria-label="Лента миниатюр, прокручивается по горизонтали" data-strip>
+        <ul class="strip-list">
+          {items.map((it, i) => (
+            <li>
+              <a class="thumb" href={it.full} data-i={i} data-stage={it.stage} data-full={it.full} data-alt={it.alt} data-title={it.title} data-plaque={it.plaque ?? ''} data-w={it.w} data-h={it.h} data-fit={it.hero ? 'cover' : 'contain'} aria-label={`Кадр ${i + 1} из ${total}: ${it.title}`} aria-current={i === 0 ? 'true' : undefined}>
+                <img src={it.thumb} alt="" width="96" height="72" loading="lazy" decoding="async" />
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+
+    <dialog class="lb" aria-label="Просмотр фотографий на весь экран" data-lb>
+      <img class="lb-img" data-lb-img src={first.full} alt="" width={first.w} height={first.h} loading="lazy" decoding="async" />
+      <p class="lb-count num" aria-live="polite" data-lb-count></p>
+      <button class="lb-btn lb-prev" type="button" aria-label="Предыдущий кадр" data-lb-prev>‹</button>
+      <button class="lb-btn lb-next" type="button" aria-label="Следующий кадр" data-lb-next>›</button>
+      <button class="lb-btn lb-close" type="button" aria-label="Закрыть" data-lb-close>×</button>
+    </dialog>
+  </div>
+</section>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-gallery]');
+  if (root) {
+    const thumbs = [...root.querySelectorAll<HTMLAnchorElement>('.thumb')];
+    const slides = [...root.querySelectorAll<HTMLImageElement>('[data-slide]')];
+    const stage = root.querySelector<HTMLElement>('[data-stage]')!;
+    const strip = root.querySelector<HTMLElement>('[data-strip]')!;
+    const count = root.querySelector<HTMLElement>('[data-count]')!;
+    const plaque = root.querySelector<HTMLElement>('[data-plaque]')!;
+    const caption = root.querySelector<HTMLElement>('[data-caption]')!;
+    const lb = root.querySelector<HTMLDialogElement>('[data-lb]')!;
+    const lbImg = root.querySelector<HTMLImageElement>('[data-lb-img]')!;
+    const lbCount = root.querySelector<HTMLElement>('[data-lb-count]')!;
+    const n = thumbs.length;
+    let i = 0;
+    let on = 0;
+
+    root.setAttribute('data-ready', '');
+    root.querySelectorAll<HTMLElement>('[hidden]').forEach((el) => el.removeAttribute('hidden'));
+
+    const wrap = (k: number) => (k + n) % n;
+    const preload = (k: number) => { const im = new Image(); im.src = thumbs[wrap(k)].dataset.stage!; };
+
+    const show = (k: number, scroll = true) => {
+      i = wrap(k);
+      const t = thumbs[i];
+      const next = slides[1 - on];
+      const cur = slides[on];
+      next.alt = t.dataset.alt!;
+      next.removeAttribute('aria-hidden');
+      next.style.setProperty('--w', t.dataset.w!);
+      next.style.setProperty('--h', t.dataset.h!);
+      next.dataset.fit = t.dataset.fit!;
+      const swap = () => {
+        next.classList.add('is-on');
+        cur.classList.remove('is-on');
+        cur.setAttribute('aria-hidden', 'true');
+        cur.alt = '';
+        on = 1 - on;
+      };
+      next.onload = swap;
+      next.src = t.dataset.stage!;
+      if (next.complete && next.naturalWidth) swap();
+      count.textContent = `${i + 1} / ${n}`;
+      caption.textContent = t.dataset.title!;
+      plaque.textContent = t.dataset.plaque!;
+      plaque.hidden = !t.dataset.plaque;
+      thumbs.forEach((x, j) => (j === i ? x.setAttribute('aria-current', 'true') : x.removeAttribute('aria-current')));
+      if (scroll) {
+        const left = t.offsetLeft - (strip.clientWidth - t.offsetWidth) / 2;
+        strip.scrollTo({ left, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      }
+      preload(i + 1); preload(i - 1);
+      if (lb.open) showLb();
+    };
+
+    const showLb = () => {
+      const t = thumbs[i];
+      lbImg.src = t.dataset.full!;
+      lbImg.alt = t.dataset.alt!;
+      lbCount.textContent = `${i + 1} / ${n}`;
+    };
+
+    thumbs.forEach((t, k) => t.addEventListener('click', (e) => { e.preventDefault(); show(k); }));
+    root.querySelector('[data-prev]')!.addEventListener('click', () => show(i - 1));
+    root.querySelector('[data-next]')!.addEventListener('click', () => show(i + 1));
+    root.querySelector('[data-open]')!.addEventListener('click', () => { showLb(); lb.showModal(); });
+    slides.forEach((s) => s.addEventListener('click', () => { showLb(); lb.showModal(); }));
+
+    // стрелки с клавиатуры: на кадре и в ленте
+    const arrows = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') { e.preventDefault(); show(i - 1); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); show(i + 1); }
+    };
+    stage.addEventListener('keydown', arrows);
+    strip.addEventListener('keydown', arrows);
+
+    // свайп по кадру
+    let sx = 0, sy = 0;
+    stage.addEventListener('pointerdown', (e) => { sx = e.clientX; sy = e.clientY; });
+    stage.addEventListener('pointerup', (e) => {
+      const dx = e.clientX - sx;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(e.clientY - sy)) show(i + (dx < 0 ? 1 : -1));
+    });
+
+    // полноэкранный просмотр
+    root.querySelector('[data-lb-prev]')!.addEventListener('click', () => show(i - 1));
+    root.querySelector('[data-lb-next]')!.addEventListener('click', () => show(i + 1));
+    root.querySelector('[data-lb-close]')!.addEventListener('click', () => lb.close());
+    lb.addEventListener('click', (e) => { if (e.target === lb) lb.close(); });
+    lb.addEventListener('keydown', arrows);
+    lb.addEventListener('close', () => thumbs[i]?.focus({ preventScroll: true }));
+    let lx = 0;
+    lb.addEventListener('pointerdown', (e) => { lx = e.clientX; });
+    lb.addEventListener('pointerup', (e) => { const d = e.clientX - lx; if (Math.abs(d) > 50) show(i + (d < 0 ? 1 : -1)); });
+  }
+</script>
+
+<style>
+  .gallery { background: var(--c-sunken); }
+  .gallery [hidden] { display: none !important; }
+  .gallery-title { margin: 0 0 var(--s-3); max-width: 22ch; }
+  .gallery-lead { margin: 0 0 var(--s-8); max-width: 65ch; color: var(--c-muted); }
+  .viewer { max-width: 68rem; margin-inline: auto; }
+
+  .stage {
+    position: relative; aspect-ratio: 16 / 9; overflow: hidden;
+    background: var(--c-bg); border: 1px solid var(--c-border); border-radius: var(--r-lg);
+  }
+  .slide {
+    position: absolute; inset: 0; margin: auto; max-width: 100%;
+    width: auto; height: min(100%, calc(var(--h, 720) * 1.3px)); aspect-ratio: var(--w, 1280) / var(--h, 720);
+    object-fit: contain; opacity: 0; cursor: zoom-in; pointer-events: none;
+    transition: opacity var(--d-state) var(--e-in-out);
+  }
+  .slide[data-fit='cover'] { inset: 0; width: 100%; height: 100%; aspect-ratio: auto; object-fit: cover; object-position: 50% 70%; }
+  .slide.is-on { opacity: 1; pointer-events: auto; }
+  .stage-plaque { position: absolute; left: var(--s-3); top: var(--s-3); pointer-events: none; }
+  .stage-count { position: absolute; left: var(--s-3); bottom: var(--s-3); margin: 0; pointer-events: none; }
+  .stage-btn {
+    position: absolute; width: var(--tap); height: var(--tap); display: grid; place-items: center; padding: 0;
+    background: color-mix(in oklab, var(--c-sunken) 85%, transparent); border: 1px solid var(--c-border);
+    border-radius: var(--r-sm); color: var(--c-text); font: 700 1.75rem/1 var(--f-display); cursor: pointer;
+    transition: background var(--d-micro) var(--e-out);
+  }
+  .stage-btn:hover { background: var(--c-sunken); }
+  .stage-prev { left: var(--s-3); top: 50%; translate: 0 -50%; }
+  .stage-next { right: var(--s-3); top: 50%; translate: 0 -50%; }
+  .stage-full { right: var(--s-3); bottom: var(--s-3); }
+  .caption { margin: var(--s-3) 0 var(--s-3); font: 700 var(--t-h3)/1.15 var(--f-display); color: var(--c-text); }
+
+  .strip { overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; padding-bottom: var(--s-2); scrollbar-color: var(--c-border) transparent; }
+  .strip-list { list-style: none; margin: 0; padding: 0; display: flex; gap: var(--s-2); width: max-content; }
+  .thumb {
+    display: block; width: 96px; height: 72px; flex: none; scroll-snap-align: center;
+    border: 1px solid var(--c-border); border-radius: var(--r-sm); overflow: hidden; background: var(--c-bg);
+    opacity: 0.6; transition: opacity var(--d-micro) var(--e-out);
+  }
+  .thumb:hover, .thumb[aria-current] { opacity: 1; }
+  .gallery[data-ready] .thumb[aria-current] { outline: 2px solid var(--c-accent-text); outline-offset: 2px; }
+  .thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+  /* без JS: кадр скрыт, миниатюры — сетка ссылок на все фото */
+  .gallery:not([data-ready]) .stage, .gallery:not([data-ready]) .caption { display: none; }
+  .gallery:not([data-ready]) .strip { overflow: visible; }
+  .gallery:not([data-ready]) .strip-list { width: auto; flex-wrap: wrap; }
+  .gallery:not([data-ready]) .thumb { opacity: 1; width: 144px; height: 108px; }
+
+  .lb {
+    width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; padding: 0; border: 0;
+    background: var(--c-sunken); color: var(--c-text);
+  }
+  .lb::backdrop { background: var(--c-sunken); }
+  .lb-img { position: absolute; inset: var(--s-16) var(--s-4); width: calc(100% - 2 * var(--s-4)); height: calc(100% - 2 * var(--s-16)); object-fit: contain; }
+  .lb-count { position: absolute; bottom: var(--s-4); left: 0; right: 0; margin: 0; text-align: center; font-size: var(--t-small); color: var(--c-muted); }
+  .lb-btn {
+    position: absolute; width: var(--tap); height: var(--tap); padding: 0; display: grid; place-items: center;
+    border: 1px solid var(--c-border); border-radius: var(--r-sm); background: var(--c-bg); color: var(--c-text);
+    font: 700 1.75rem/1 var(--f-display); cursor: pointer;
+  }
+  .lb-btn:hover { background: var(--c-surface); }
+  .lb-prev { left: var(--s-3); top: 50%; translate: 0 -50%; }
+  .lb-next { right: var(--s-3); top: 50%; translate: 0 -50%; }
+  .lb-close { right: var(--s-3); top: var(--s-3); }
+
+  @media (max-width: 40rem) {
+    .stage-prev, .stage-next { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .slide, .thumb, .stage-btn { transition: none; }
+  }
+</style>

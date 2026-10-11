@@ -1,0 +1,138 @@
+---
+/**
+ * Первый экран — «витрина» (DESIGN.md §5): капсула-кадр зала 3:2 с вшитым вордмарком, правая панель, полка «Хиты котла».
+ */
+import { Picture } from 'astro:assets';
+import DishCapsule from '../components/DishCapsule.astro';
+import { dishes, photos } from '../data/menu';
+import { business } from '../data/site';
+
+const bySlug = (s: string) => dishes.find((d) => d.slug === s)!; // слаги ниже есть в menu.ts
+const shelf = ['imperator-40k', 'orki-korki', 'skryten', 'steik-cherporoga', 'borsch-gordyni'].map(bySlug);
+const thumbs = [
+  { src: photos['interior-face'], alt: 'Лицо орка-скульптуры в зале таверны' },
+  { src: photos['interior-mugs'], alt: 'Деревянные кружки с пеной и окорока на столе орков' },
+  { src: photos['dish-noga-dolgonoga'], alt: 'Нога лесного долгонога на деревянной доске' },
+  { src: photos['dish-zakuska-prygolapa'], alt: 'Закуска из прыголапа с реквизитом таверны' },
+];
+const y = business.rating.yandex;
+const features = ['Крафтовое пиво', 'Кальяны', 'Настолки', 'D&D и MTG', 'Ретро-автоматы'];
+---
+<section data-section="hero" aria-labelledby="hero-title" class="hero">
+  <div class="container-x hero-grid">
+    <figure class="hero-capsule frame">
+      <Picture
+        src={photos['interior-hero-orcs']}
+        alt="Зал таверны ЗАГ-ЗАГ: два орка-скульптуры за деревянным столом с кружками пива и окороками, факелы, цепи, золотая вывеска «ЗАГ-ЗАГ»"
+        widths={[640, 960, 1280, 1640]}
+        sizes="(min-width: 1280px) 820px, (min-width: 1024px) 60vw, 100vw"
+        formats={['avif', 'webp']}
+        loading="eager"
+        fetchpriority="high"
+      />
+      <figcaption class="plaque hero-plaque">Зал таверны</figcaption>
+    </figure>
+
+    <div class="hero-panel">
+      <h1 id="hero-title" class="hero-title">Гик-таверна Орды у&nbsp;Маяковской</h1>
+      <p class="hero-lead">Самые достойные орки-бойзы ото&nbsp;всюду уже с&nbsp;нами. Срочно присоединяйся к&nbsp;Орде во&nbsp;имя Горки и&nbsp;Морки!</p>
+      <ul class="hero-thumbs" aria-label="Кадры таверны">
+        {thumbs.map((t) => (
+          <li class="frame">
+            <Picture src={t.src} alt={t.alt} widths={[160, 240]} sizes="(min-width: 1024px) 100px, 22vw" formats={['avif', 'webp']} loading="eager" />
+          </li>
+        ))}
+      </ul>
+      <p class="hero-rating">
+        <a href={y.url} target="_blank" rel="noopener" class="hero-rating-link">
+          <span class="star num" aria-hidden="true">★&nbsp;{y.value}</span>
+          <span>на Яндекс Картах — <span class="num">{y.ratings}</span>&nbsp;оценок</span>
+        </a>
+      </p>
+      <p class="hero-addr">{business.address.street}&nbsp;— {business.metro.distance} от&nbsp;м.&nbsp;{business.metro.name}</p>
+      <ul class="hero-tags" aria-label="Что есть в таверне">
+        {features.map((f) => <li class="tag">{f}</li>)}
+      </ul>
+      <div class="hero-actions">
+        <a class="btn btn-primary btn-lg" href="#feast">Забронировать стол</a>
+        <a class="btn btn-secondary btn-lg" href="#menu">Меню Орды</a>
+      </div>
+    </div>
+
+    <div class="hero-shelf">
+      <div class="shelf-head">
+        <h2 class="shelf-label">Хиты котла</h2>
+        <a class="link" href="#menu">Смотреть всё&nbsp;→</a>
+      </div>
+      <ul class="shelf-row">
+        {shelf.map((d) => (
+          <li><DishCapsule dish={d} sizes="(min-width: 1280px) 240px, (min-width: 768px) 30vw, 58vw" /></li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero { padding-block: var(--s-4) var(--s-12); }
+  .hero-grid { display: grid; gap: var(--s-4); }
+  .hero-capsule { position: relative; margin: 0; aspect-ratio: 3 / 2; border-radius: var(--r-lg); animation: hero-in var(--d-enter) var(--e-out) both; }
+  .hero-capsule :global(picture), .hero-capsule :global(img) { width: 100%; height: 100%; }
+  .hero-capsule :global(img) { object-fit: cover; object-position: 50% 80%; animation: hero-zoom var(--d-enter) var(--e-out) both; }
+  .hero-plaque { position: absolute; top: var(--s-3); left: var(--s-3); }
+
+  .hero-panel { display: grid; gap: var(--s-4); align-content: start; animation: hero-in var(--d-enter) var(--e-out) 100ms both; }
+  .hero-title { font-size: var(--t-hero); line-height: var(--t-hero-lh); letter-spacing: var(--t-hero-ls); font-weight: 800; }
+  .hero-lead { margin: 0; color: var(--c-muted); max-width: 46ch; }
+  .hero-thumbs { order: -1; display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-2); list-style: none; margin: 0; padding: 0; }
+  .hero-thumbs li { aspect-ratio: 1; }
+  .hero-thumbs :global(picture), .hero-thumbs :global(img) { width: 100%; height: 100%; }
+  .hero-rating { margin: 0; }
+  .hero-rating-link { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: var(--s-2); min-height: var(--tap); align-items: center; text-decoration: none; }
+  .hero-rating-link:hover span:last-child { text-decoration: underline; text-underline-offset: 3px; }
+  .star { font: 800 1.375rem/1 var(--f-display); color: var(--c-secondary); }
+  .hero-addr { margin: 0; color: var(--c-muted); font-size: var(--t-small); }
+  .hero-tags { display: flex; flex-wrap: wrap; gap: var(--s-2); list-style: none; margin: 0; padding: 0; }
+  .hero-tags li { flex: none; }
+  .hero-actions { display: flex; flex-wrap: wrap; gap: var(--s-3); }
+  .hero-actions .btn-primary { flex: 1 1 100%; }
+
+  .hero-shelf { min-width: 0; animation: hero-in var(--d-enter) var(--e-out) 200ms both; }
+  .shelf-head { display: flex; justify-content: space-between; align-items: center; gap: var(--s-4); margin-bottom: var(--s-3); }
+  .shelf-head .link { min-height: var(--tap); display: inline-flex; align-items: center; }
+  .shelf-row {
+    display: grid; grid-auto-flow: column; grid-auto-columns: min(58vw, 240px); gap: var(--s-3);
+    list-style: none; margin: 0 calc(-1 * var(--gutter)); padding: 0 var(--gutter) var(--s-2);
+    overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--gutter);
+  }
+  .shelf-row li { scroll-snap-align: start; }
+
+  @media (min-width: 768px) {
+    .hero-panel { grid-template-columns: 1fr 1fr; column-gap: var(--s-8); }
+    .hero-thumbs { grid-column: 1 / -1; }
+    .hero-title, .hero-lead { grid-column: 1; }
+    .hero-rating, .hero-addr, .hero-tags, .hero-actions { grid-column: 2; }
+    .hero-title { grid-row: 2; } .hero-lead { grid-row: 3 / span 3; }
+    .hero-actions .btn-primary { flex: 1 1 auto; }
+  }
+  @media (min-width: 1024px) {
+    .hero { padding-top: var(--s-6); }
+    .hero-grid { grid-template-columns: minmax(0, 1fr) 400px; gap: var(--s-6) var(--s-6); }
+    .hero-panel {
+      grid-template-columns: 1fr; padding: var(--s-6); background: var(--c-surface);
+      border: 1px solid var(--c-border); border-radius: var(--r-md);
+    }
+    .hero-panel > * { grid-column: 1 !important; grid-row: auto !important; }
+    .hero-thumbs { order: 0; }
+    .hero-capsule { aspect-ratio: auto; min-height: 520px; }
+    .hero-tags { flex-wrap: wrap; overflow: visible; }
+    .hero-shelf { grid-column: 1 / -1; }
+    .shelf-row { grid-auto-columns: calc((100% - 4 * var(--s-3)) / 5); margin: 0; padding: 0; overflow: visible; }
+  }
+  @media (min-width: 1360px) {
+    .hero-grid { grid-template-columns: minmax(0, 1fr) 440px; }
+  }
+
+  @keyframes hero-in { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes hero-zoom { from { transform: scale(1.04); } to { transform: none; } }
+</style>

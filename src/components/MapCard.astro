@@ -1,0 +1,54 @@
+---
+/**
+ * Как добраться: кнопки маршрута в Яндекс.Картах и 2ГИС, карта по нажатию.
+ * Карта не грузится, пока её не попросили: не тормозит страницу и не шлёт данные посетителя заранее.
+ * Карта появляется только при заданных координатах business.geo (сейчас их нет — блок скрыт).
+ *
+ * <MapCard note="Вход со двора, 2 этаж" />
+ */
+import { business } from '../data/site';
+interface Props { note?: string; title?: string }
+const { note = business.address.note, title = 'Маршрут' } = Astro.props;
+const q = encodeURIComponent(`${business.address.city}, ${business.address.street}`);
+const ya = business.links.yandexMaps || `https://yandex.ru/maps/?text=${q}`;
+const gis = business.links.twoGis || `https://2gis.ru/search/${q}`;
+const { lat, lon } = business.geo;
+const widget = lat ? `https://yandex.ru/map-widget/v1/?ll=${lon}%2C${lat}&z=16&pt=${lon}%2C${lat}%2Cpm2rdm` : '';
+---
+<div class="mapcard">
+  <h3 class="mc-title">{title}</h3>
+  <p class="mc-addr">{business.address.city}, {business.address.street}</p>
+  {note && <p class="mc-note" set:html={note.replace('340 м', '340&nbsp;м')} />}
+  <div class="mc-actions">
+    <a class="btn btn-secondary" href={ya} target="_blank" rel="noopener">Маршрут в Яндекс&nbsp;Картах</a>
+    <a class="btn btn-secondary" href={gis} target="_blank" rel="noopener">Открыть в&nbsp;2ГИС</a>
+  </div>
+  {widget && (
+    <div class="mc-map" data-map={widget}>
+      <button type="button" class="mc-load btn btn-primary">Показать карту</button>
+    </div>
+  )}
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-map]').forEach((box) => {
+    box.querySelector('button')?.addEventListener('click', () => {
+      const f = document.createElement('iframe');
+      f.src = box.dataset.map!;
+      f.title = 'Карта';
+      f.loading = 'lazy';
+      f.setAttribute('allowfullscreen', '');
+      box.replaceChildren(f);
+    });
+  });
+</script>
+
+<style>
+  .mapcard { display: flex; flex-direction: column; gap: var(--s-3); padding: var(--s-6); background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-md); height: 100%; }
+  .mc-title { font-size: var(--t-h3); margin: 0; }
+  .mc-addr { font-weight: 500; margin: 0; }
+  .mc-note { color: var(--c-muted); margin: 0; }
+  .mc-actions { display: flex; flex-direction: column; gap: var(--s-3); margin-top: var(--s-3); }
+  .mc-map { min-height: 320px; border: 1px solid var(--c-border); border-radius: var(--r-md); overflow: hidden; background: var(--c-sunken); display: grid; place-items: center; margin-top: var(--s-3); }
+  .mc-map :global(iframe) { width: 100%; height: 100%; min-height: 320px; border: 0; }
+</style>

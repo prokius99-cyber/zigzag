@@ -1,0 +1,50 @@
+---
+/**
+ * Нижняя панель на телефоне и планшете (DESIGN.md §4, §8): «Забронировать стол» + иконки звонка и Telegram по 48px.
+ * Появляется, когда первый экран ушёл из вида; скрыта на ширине ≥ 1024px. Учитывает вырез экрана. Данные — из site.ts.
+ */
+import { business } from '../data/site';
+const tg = business.links.telegram ? `https://t.me/${business.links.telegram}` : '';
+---
+<nav class="contact-bar" aria-label="Связаться" data-contact-bar>
+  <a class="btn btn-primary cb-book" href="#feast">Забронировать стол</a>
+  <a class="cb-icon" href={`tel:${business.phone.e164}`} aria-label={`Позвонить: ${business.phone.display}`} data-cta-call>
+    <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24"><path fill="currentColor" d="M6.6 10.8a15.1 15.1 0 006.6 6.6l2.2-2.2a1 1 0 011-.25 11.4 11.4 0 003.6.57 1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.25.2 2.45.57 3.6a1 1 0 01-.25 1z"/></svg>
+  </a>
+  {tg && (
+    <a class="cb-icon" href={tg} target="_blank" rel="noopener" aria-label="Написать в Telegram">
+      <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24"><path fill="currentColor" d="M21.4 4.1 2.9 11.2c-1.3.5-1.2 1.2-.2 1.5l4.7 1.5 1.8 5.6c.2.6.4.8.9.8.4 0 .6-.2.9-.5l2.3-2.2 4.7 3.5c.9.5 1.5.2 1.7-.8l3.1-14.5c.3-1.3-.5-1.9-1.4-1.5zM9.5 14.6l8.6-7.8c.4-.3-.1-.5-.6-.2L7.6 13.6"/></svg>
+    </a>
+  )}
+</nav>
+
+<style>
+  .contact-bar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+    display: flex; gap: var(--s-2); align-items: center;
+    padding: var(--s-2) var(--s-3) calc(var(--s-2) + env(safe-area-inset-bottom));
+    background: var(--c-surface); border-top: 1px solid var(--c-border);
+    transform: translateY(110%); opacity: 0; visibility: hidden;
+    transition: transform var(--d-state) var(--e-out), opacity var(--d-state) var(--e-out), visibility 0s linear var(--d-state);
+  }
+  /* Пока скрыта — вне порядка фокуса (visibility), появляется плавно. */
+  .contact-bar.is-shown { transform: none; opacity: 1; visibility: visible; transition-delay: 0s; }
+  .cb-book { flex: 1; }
+  .cb-icon {
+    flex: none; width: var(--tap); height: var(--tap); display: grid; place-items: center;
+    border: 1px solid var(--c-border); border-radius: var(--r-sm); background: var(--c-sunken); color: var(--c-text);
+  }
+  @media (min-width: 1024px) { .contact-bar { display: none; } }
+  :global(body) { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+  @media (min-width: 1024px) { :global(body) { padding-bottom: 0; } }
+</style>
+
+<script>
+  const bar = document.querySelector<HTMLElement>('[data-contact-bar]');
+  const hero = document.querySelector('[data-section="hero"]');
+  if (bar && hero) {
+    new IntersectionObserver(([e]) => bar.classList.toggle('is-shown', !e.isIntersecting), { threshold: 0 }).observe(hero);
+  } else {
+    bar?.classList.add('is-shown');
+  }
+</script>

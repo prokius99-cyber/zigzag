@@ -1,0 +1,58 @@
+---
+/**
+ * Главная ЗАГ-ЗАГ: собирает секции по DESIGN.md §5 (порядок = SPEC.md «Решения»).
+ * У каждой секции — data-section из .premiumsite/gate.config.json.
+ */
+import Base from '../layouts/Base.astro';
+import ContactBar from '../components/ContactBar.astro';
+import GlassFilter from '../components/GlassFilter.astro';
+import ItemCard from '../components/ItemCard.astro';
+import Header from '../sections/Header.astro';
+import Hero from '../sections/Hero.astro';
+import Tavern from '../sections/Tavern.astro';
+import MenuCatalog from '../sections/MenuCatalog.astro';
+import PhotoGallery from '../sections/PhotoGallery.astro';
+import Events from '../sections/Events.astro';
+import Reviews from '../sections/Reviews.astro';
+import Feast from '../sections/Feast.astro';
+import Questions from '../sections/Questions.astro';
+import Visit from '../sections/Visit.astro';
+import { business } from '../data/site';
+---
+<Base>
+  <GlassFilter />
+  <Header />
+
+  <main id="main">
+    <Hero />
+    <Tavern />
+    <MenuCatalog />
+    <PhotoGallery />
+    <Events />
+    <Reviews />
+    <Feast />
+    <Questions />
+    <Visit />
+  </main>
+
+  <footer class="site-footer">
+    <div class="container-x foot-in">
+      <p class="foot-brand">{business.name}</p>
+      <p>{business.address.city}, {business.address.street}</p>
+      <p><a class="link num" href={`tel:${business.phone.e164}`}>{business.phone.display}</a></p>
+      <p><a href={`${import.meta.env.BASE_URL}privacy`} class="link">Политика конфиденциальности</a></p>
+      <p class="foot-legal">{business.legal.operator}, ИНН&nbsp;{business.legal.inn}</p>
+    </div>
+  </footer>
+
+  <ItemCard />
+  <ContactBar />
+</Base>
+
+<style>
+  .site-footer { padding-block: var(--s-12); border-top: 1px solid var(--c-border); background: var(--c-sunken); color: var(--c-muted); font-size: var(--t-small); }
+  .foot-in { display: grid; gap: var(--s-2); }
+  .foot-in p { margin: 0; }
+  .foot-in a { display: inline-flex; align-items: center; min-height: var(--tap); }
+  .foot-brand { font: 800 1.5rem/1 var(--f-display); color: var(--c-text); }
+</style>

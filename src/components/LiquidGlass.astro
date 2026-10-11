@@ -1,0 +1,79 @@
+---
+/**
+ * Жидкое стекло: кнопка, ссылка или поверхность с размытием и преломлением фона по краю.
+ *
+ * <LiquidGlass as="a" href="#order" tone="accent">Отложить</LiquidGlass>
+ * <LiquidGlass as="button" tone="light" size="sm">Щука</LiquidGlass>
+ * <LiquidGlass as="div" tone="dark" surface>…карточка…</LiquidGlass>
+ *
+ * tone: accent — почти сплошной акцент со стеклянной кромкой (главные кнопки, контраст гарантирован);
+ *       light / dark — прозрачнее, для второстепенных кнопок и плашек поверх фото/видео/WebGL.
+ * strength: soft | strong — плотность подложки под текстом; над пёстрым фоном — strong.
+ * Преломление (SVG feDisplacementMap) работает в Chromium; Safari и Firefox получают размытие —
+ * объявление с url() они отбрасывают, и действует предыдущее, с blur.
+ * <GlassFilter /> ставится один раз на странице.
+ */
+interface Props {
+  as?: 'a' | 'button' | 'div' | 'span';
+  tone?: 'accent' | 'light' | 'dark';
+  size?: 'sm' | 'md' | 'lg';
+  strength?: 'soft' | 'strong';
+  surface?: boolean;
+  class?: string;
+  [key: string]: any;
+}
+const { as: Tag = 'button', tone = 'light', size = 'md', strength = 'strong', surface = false, class: cls = '', ...rest } = Astro.props;
+---
+<Tag class:list={['lg', `lg-${tone}`, `lg-${size}`, `lg-${strength}`, surface && 'lg-surface', cls]} {...rest}>
+  <span class="lg-label"><slot /></span>
+</Tag>
+
+<style>
+  .lg {
+    --lg-tint: var(--c-bg);
+    --lg-fg: var(--c-text);
+    --lg-mix: 55%;
+    position: relative; isolation: isolate;
+    display: inline-flex; align-items: center; justify-content: center; gap: var(--s-2);
+    min-height: var(--tap); padding: 0 var(--s-6);
+    border: 0; border-radius: var(--r-pill);
+    color: var(--lg-fg); font: 600 1rem/1 var(--f-body); text-decoration: none; cursor: pointer;
+    background: color-mix(in oklab, var(--lg-tint) var(--lg-mix), transparent);
+    backdrop-filter: blur(14px) saturate(170%);
+    -webkit-backdrop-filter: blur(14px) saturate(170%);
+    backdrop-filter: url(#lg-refract) blur(10px) saturate(170%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.55),
+      inset 0 -1px 0 rgb(255 255 255 / 0.12),
+      inset 0 0 0 1px rgb(255 255 255 / 0.18),
+      0 10px 30px rgb(0 0 0 / 0.16);
+    transition: transform var(--d-micro) var(--e-out), box-shadow var(--d-state) var(--e-out), background var(--d-state) var(--e-out);
+  }
+  /* блик сверху — стекло «ловит» свет */
+  .lg::before {
+    content: ''; position: absolute; inset: 1px 1px 50% 1px; border-radius: inherit; z-index: -1; pointer-events: none;
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.38), rgb(255 255 255 / 0));
+    opacity: 0.7;
+  }
+  .lg-label { position: relative; }
+  .lg:hover { transform: translateY(-1px); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.7), inset 0 0 0 1px rgb(255 255 255 / 0.24), 0 14px 36px rgb(0 0 0 / 0.2); }
+  .lg:active { transform: scale(0.98); }
+  .lg:focus-visible { outline: 3px solid var(--c-accent); outline-offset: 3px; }
+
+  .lg-light { --lg-tint: var(--glass-light, #ffffff); --lg-fg: var(--c-text); }
+  .lg-dark { --lg-tint: var(--glass-dark, #0b0f14); --lg-fg: var(--glass-dark-fg, #ffffff); }
+  .lg-accent { --lg-tint: var(--c-accent); --lg-fg: var(--c-on-accent); --lg-mix: 86%; }
+  .lg-soft { --lg-mix: 32%; }
+  .lg-accent.lg-soft { --lg-mix: 72%; }
+
+  .lg-sm { min-height: 44px; padding: 0 var(--s-4); font-size: 0.95rem; }
+  .lg-lg { min-height: 60px; padding: 0 var(--s-8); font-size: 1.1rem; }
+
+  .lg-surface { display: block; border-radius: var(--r-lg); padding: var(--s-6); cursor: auto; font-weight: 400; line-height: var(--t-body-lh); text-align: start; }
+  .lg-surface:hover { transform: none; }
+  .lg[aria-pressed='true'] { --lg-tint: var(--c-accent); --lg-fg: var(--c-on-accent); --lg-mix: 86%; }
+
+  @media (prefers-reduced-transparency: reduce) {
+    .lg { --lg-mix: 94%; backdrop-filter: none; -webkit-backdrop-filter: none; }
+  }
+</style>

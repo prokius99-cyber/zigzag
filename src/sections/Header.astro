@@ -1,0 +1,64 @@
+---
+/** Шапка (DESIGN.md §4): аватар-орк, вкладки, телефон, «Забронировать стол»; ниже 1024px — модуль menu. */
+import { Image } from 'astro:assets';
+import Menu from '../components/Menu.astro';
+import logo from '../assets/logo.jpg';
+import { business } from '../data/site';
+
+const nav = [
+  { href: '#menu', label: 'Меню Орды' },
+  { href: '#events', label: 'Игровые вечера' },
+  { href: '#feast', label: 'Пир для клана' },
+  { href: '#gallery', label: 'Галерея' },
+  { href: '#visit', label: 'Как добраться' },
+];
+---
+<header class="hdr">
+  <div class="container-x hdr-in">
+    <a href={import.meta.env.BASE_URL} class="hdr-brand" aria-label={`${business.name} — на главную`}>
+      <Image src={logo} alt="" width={36} height={36} class="hdr-logo" loading="eager" />
+      <span>{business.name}</span>
+    </a>
+    <nav class="hdr-nav" aria-label="Разделы">
+      <ul>{nav.map((n) => <li><a href={n.href}>{n.label}</a></li>)}</ul>
+    </nav>
+    <div class="hdr-end">
+      <a class="hdr-phone num" href={`tel:${business.phone.e164}`}>{business.phone.display}</a>
+      <a class="btn btn-primary hdr-cta" href="#feast"><span class="hdr-cta-long">Забронировать стол</span><span class="hdr-cta-short">Бронь<span class="sr-only"> стола</span></span></a>
+      <div class="hdr-menu"><Menu side="right" items={nav} /></div>
+    </div>
+  </div>
+</header>
+
+<style>
+  .hdr { position: sticky; top: 0; z-index: 40; background: var(--c-surface); border-bottom: 1px solid var(--c-border); }
+  .hdr-in { display: flex; align-items: center; gap: var(--s-6); min-height: 56px; }
+  .hdr-brand { display: inline-flex; align-items: center; gap: var(--s-3); min-height: var(--tap); text-decoration: none; font: 800 1.25rem/1 var(--f-display); white-space: nowrap; }
+  .hdr-brand :global(.hdr-logo) { width: 36px; height: 36px; border-radius: var(--r-sm); object-fit: cover; }
+  .hdr-nav { display: none; }
+  .hdr-nav ul { display: flex; gap: var(--s-1); list-style: none; margin: 0; padding: 0; }
+  .hdr-nav a {
+    display: inline-flex; align-items: center; min-height: var(--tap); padding: 0 var(--s-3); border-radius: var(--r-sm);
+    color: var(--c-muted); font-weight: 500; text-decoration: none; transition: background-color var(--d-micro) var(--e-out), color var(--d-micro) var(--e-out);
+  }
+  .hdr-nav a:hover { color: var(--c-text); background: var(--c-sunken); }
+  .hdr-end { margin-left: auto; display: flex; align-items: center; gap: var(--s-3); }
+  .hdr-phone { display: none; min-height: var(--tap); align-items: center; font-weight: 600; text-decoration: none; }
+  .hdr-cta { padding: 0 var(--s-4); }
+  .hdr-cta-long { display: none; }
+  .hdr-menu { width: var(--tap); height: var(--tap); }
+  @media (min-width: 768px) {
+    .hdr-cta { padding: 0 22px; }
+    .hdr-cta-long { display: inline; }
+    .hdr-cta-short { display: none; }
+  }
+  @media (min-width: 1024px) {
+    .hdr-in { min-height: 64px; }
+    .hdr-nav { display: block; }
+    .hdr-menu { display: none; }
+    .hdr-phone { display: inline-flex; }
+  }
+  @media (min-width: 1024px) and (max-width: 1359px) {
+    .hdr-nav li:nth-child(n + 4) { display: none; }
+  }
+</style>
